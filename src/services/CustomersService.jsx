@@ -4,6 +4,47 @@ import * as utilService from '../ServiceTools';
 
 const URL_BASE = 'http://192.168.237.65:5176/api/customers';
 
+export const addCustomer = async (customer) => {
+  utilService.removeNullValues(customer);
+
+  const data = QueryString.stringify(customer, { allowDots: true });
+
+  const config = {
+    method: 'POST',
+    url: `${URL_BASE}/add`,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    data: data,
+  };
+  return axios(config)
+    .then((response) => {
+      return response;
+    })
+    .catch((error) => {
+      return error.response;
+    });
+};
+
+export const updateCustomer = async (customer) => {
+  utilService.removeNullValues(customer);
+
+  const data = QueryString.stringify(customer, { allowDots: true });
+
+  const config = {
+    method: 'PUT',
+    url: `${URL_BASE}/update`,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    data: data,
+  };
+
+  return axios(config)
+    .then((response) => {
+      return response;
+    })
+    .catch((error) => {
+      return error.response;
+    });
+};
+
 export async function getCustomers(orientation, order, page) {
   const data = new FormData();
 
@@ -30,3 +71,20 @@ export async function getCustomers(orientation, order, page) {
       return error.response;
     });
 }
+
+export const deleteCustomer = async (customerId) => {
+  utilService.removeNullValues(customerId);
+
+  const config = {
+    method: 'DELETE',
+    url: `${URL_BASE}/delete/${customerId}`,
+  };
+
+  return axios(config)
+    .then((response) => {
+      return response;
+    })
+    .catch((error) => {
+      return error.response;
+    });
+};

@@ -1,23 +1,32 @@
 import { faUserPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Backdrop, Button, CircularProgress } from '@mui/material';
+import {
+  Alert,
+  Backdrop,
+  Button,
+  CircularProgress,
+  Snackbar,
+} from '@mui/material';
 import { useState, useEffect, useRef, createContext } from 'react';
 import * as service from '../../services/CustomersService';
 import TableCustomers from '../../components/public/customers/TableCustomers';
 import ModalCustomers from '../../components/public/customers/ModalCustomers';
 import { Customer } from './../../AppTools';
 
-export const CustomersContext = createContext({})
+export const CustomersContext = createContext({});
 
 function Customers() {
-  const [totalPages, setTotalPages] = useState(0)
+  const [totalPages, setTotalPages] = useState(0);
   const [activeBackdrop, setActiveBackdrop] = useState(false);
-  
-  const [showModal, setShowModal] = useState(false)
-  const [customer, setCustomer ] = useState(new Customer())
+
+  const [showModal, setShowModal] = useState(false);
+  const [customer, setCustomer] = useState(new Customer());
 
   const [customers, setCustomers] = useState([]);
-  const [hasCustomers, setHasCustomers] = useState(false)
+  const [hasCustomers, setHasCustomers] = useState(false);
+
+  const [success, setSuccess] = useState({ open: false, message: '' });
+  const [error, setError] = useState({ open: false, message: '' });
 
   const defaultPageRef = useRef(0);
   const defaultOrientationRef = useRef('asc');
@@ -39,10 +48,32 @@ function Customers() {
   };
 
   const openModal = () => {
-    setShowModal(true)
+    setShowModal(true);
   };
   const closeModal = () => {
-    setShowModal(false)
+    setShowModal(false);
+  };
+
+  const openSuccess = (message) => {
+    success.message = message;
+    setSuccess({ ...success, open: true });
+  };
+  const closeSuccess = (message) => {
+    setSuccess({ ...success, open: false });
+    success.message = '';
+  };
+  const openError = (message) => {
+    error.message = message;
+    setError({ ...error, open: true });
+  };
+  const closeError = (message) => {
+    setSuccess({ ...error, open: false });
+    error.message = '';
+  };
+
+  const toastPosition = {
+    vertical: 'top',
+    horizontal: 'center',
   };
 
   const getCustomers = async (orientation, order, page) => {
@@ -70,15 +101,13 @@ function Customers() {
     );
     console.log(response);
     if (response?.status == 200) {
-      setTotalPages(response.data.totalPages)
+      setTotalPages(response.data.totalPages);
       setCustomers(response.data.content);
     } else {
       console.error(response.data.message);
     }
     closeBackdrop();
   };
-
-  console.log(customers);
 
   return (
     <>
@@ -94,29 +123,57 @@ function Customers() {
       </Button>
 
       <CustomersContext.Provider
-      value={{
-        totalPages: totalPages,
-        setCustomer: setCustomer,
-        customer: customer
-      }}
+        value={{
+          toast: { success: openSuccess, error: openError },
+          modalCustomer: { open: openModal },
+          totalPages: totalPages,
+          setCustomer: setCustomer,
+          customer: customer,
+          backdrop: { open: openBackdrop, close: closeBackdrop },
+        }}
       >
         <ModalCustomers
-        open={showModal}
-        onClose={closeModal}
-        customers={{reload: getCustomers}}/>
+          open={showModal}
+          onClose={closeModal}
+          customers={{ reload: getCustomers }}
+          activeBackdropInModal={activeBackdrop}
+        />
 
+        {hasCustomers ? (
+          <TableCustomers
+            customers={{ collection: customers, reload: getCustomers }}
+            backdrop={{ open: openBackdrop, close: closeBackdrop }}
+            setCustomer={{ setCustomer }}
+           
+            onClose={close}
+            
+          />
+        ) : (
+          <p className='mt-4 text-slate-300'>No hay clientes cargados</p>
+        )}
+      </CustomersContext.Provider>
 
-{hasCustomers?(
-  
-  <TableCustomers
-  customers={{collection: customers, reload: getCustomers}}
-  backdrop={{open: openBackdrop, close: closeBackdrop}}
-/>
-):(
-  <p className='mt-4 text-slate-300'>No hay clientes cargados</p>
-)}
+      <Snackbar
+        open={success.open}
+        anchorOrigin={toastPosition}
+        autoHideDuration={3000}
+        onClose={closeSuccess}
+      >
+        <Alert onClose={closeSuccess} severity='success' sx={{ width: '100%' }}>
+          {success.message}
+        </Alert>
+      </Snackbar>
 
-</CustomersContext.Provider>
+      <Snackbar
+        open={error.open}
+        anchorOrigin={toastPosition}
+        autoHideDuration={3000}
+        onClose={closeError}
+      >
+        <Alert onClose={closeError} severity='error' sx={{ width: '100%' }}>
+          {error.message}
+        </Alert>
+      </Snackbar>
 
       <Backdrop
         sx={{ color: 'fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
